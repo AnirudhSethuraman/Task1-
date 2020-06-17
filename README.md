@@ -3,7 +3,7 @@ Here is my code I used to build automation using terraform , AWS as a cloud prov
 
 
 
-#Problem Statement of Task:
+# Problem Statement of Task:
 Create/launch Application using Terraform
 1.Create the key-pair and security group which allow the port 80.
 
@@ -20,7 +20,7 @@ Create/launch Application using Terraform
 7. Launch the application for testing from the code itself.
 
 
-##prerequisite
+## prerequisite
 1.Aws Cli
 2.Terraform 
 3.AWS account 
