@@ -1,3 +1,5 @@
+//--------------------- AWS - key - security - ec2 - ebs - git------------
+
 provider "aws" {
 
 	region = "ap-south-1"
@@ -115,11 +117,134 @@ provisioner "remote-exec"{
        "sudo mkfs.ext4  /dev/xvdh",
        "sudo mount  /dev/xvdh  /var/www/html",
        "sudo rm -rf /var/www/html/*",
-       "sudo git clone https://github.com/saranyanambiarr/Webserver-Terraform-AWS.git  /var/www/html/"
+       "sudo git clone https://github.com/AnirudhSethuraman/Task1.git  /var/www/html/"
     ]
   }
 }
+ 
+
+
+
+// ---------- AWS------- S3
+
+resource "aws_s3_bucket" "my_bucket" {
+bucket = "bucket1"
+acl = "private"
+force_destroy = true
+
+tags={
+Name = "task"
+} } locals {
+s3_origin_id = "s3bucketOrigin"
+}
+
+output "s3bucket_id" {
+
+     value  =   aws_s3_bucket.S3_buck.id 
+}
+
+
+resource "aws_s3_bucket_object" "s3images" {
+
+bucket ="${aws_s3_bucket.my_bucket.id}"
+key = "pic"
+source = "C:/Users/Anirudh/Desktop/task.jpeg"
+acl = "public-read"
+}
+
+//--------AWS----Cloudfront-------
+
+locals {	
+	s3_origin_id = aws_s3_bucket.my_bucket.bucket
+	image_url = "${aws_cloudfront_distribution.my_s3_distribution.domain_name}/${aws_s3_bucket_object.image-pull.key}"
+	}
+	
+	
+	
+	resource "aws_cloudfront_distribution" "my_s3_distribution" {
+	origin {
+	domain_name = aws_s3_bucket.my_bucket.bucket_regional_domain_name
+	origin_id   = local.s3_origin_id
+	
+	s3_origin_config {
+	origin_access_identity = "origin-access-identity/cloudfront/E1MXIMYZTT87TL"
+	}
+	}
+	
+	enabled             = true
+	is_ipv6_enabled     = true
+	default_root_object = "hybrid_multi_cloud.html"
+	
+	
+	default_cache_behavior {
+	allowed_methods  = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
+	cached_methods   = ["GET", "HEAD"]
+	target_origin_id = local.s3_origin_id
+	
+	forwarded_values {
+	query_string = false
+	
+	cookies {
+	forward = "none"
+	}
+	}
+	
+	
+	viewer_protocol_policy = "allow-all"
+	min_ttl                = 0
+	default_ttl            = 3600
+	max_ttl                = 86400
+	}
+	
+	restrictions {
+	geo_restriction {
+	restriction_type = "none"
+	}
+	}
+	
+	viewer_certificate {
+	cloudfront_default_certificate = true
+	}
+	
+	
+	
+	connection {
+	type     = "ssh"
+	user     = "ec2-user"
+	private_key =  tls_private_key.keya.private_key_pem
+	host     = aws_instance.myweb.public_ip
+	}
+	
+	provisioner "remote-exec" {
+	inline  = [
+	"sudo su << EOF",
+	"echo \"<img src='http://${self.domain_name}/${aws_s3_bucket_object.image-pull.key}'>\" >> /var/www/html/index.php",
+	"EOF"
+	]
+	}
+	
+	}
+	
+
+	
+	resource "null_resource" "lcl_local"  {
+	
+	
+	depends_on = [
+	aws_cloudfront_distribution.my_s3_distribution,
+	]
+	
+	provisioner "local-exec" {
+	command = "start chrome  ${aws_instance.myweb.public_ip}"
+	}
+	}
+
+
+
+
   
+ 
+
   
   
   
